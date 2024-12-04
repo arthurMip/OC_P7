@@ -15,6 +15,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<LocalDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<TradeRepository>();
 builder.Services.AddScoped<RatingRepository>();
 builder.Services.AddScoped<BidListRepository>();
