@@ -13,6 +13,7 @@ namespace Dot.Net.WebApi.Data
         }
 
         public DbSet<User> Users { get; set;}
+        public DbSet<Trade> Trades { get; set; }
         public DbSet<Rating> Ratings { get; set; }
         public DbSet<BidList> BidLists { get; set; }
         public DbSet<RuleName> RuleNames { get; set; }
