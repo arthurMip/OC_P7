@@ -17,6 +17,7 @@ builder.Services.AddDbContext<LocalDbContext>(options =>
 
 
 builder.Services.AddScoped<BidListRepository>();
+builder.Services.AddScoped<CurvePointRepository>();
 
 
 var app = builder.Build();
