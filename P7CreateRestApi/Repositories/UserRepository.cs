@@ -54,4 +54,9 @@ public class UserRepository
     {
         return _context.Users.AnyAsync(u => u.Id == userId);
     }
+
+    public async Task<bool> ContainAsync(string username, string password)
+    {
+        return await _context.Users.AnyAsync(u => u.Username == username && u.Password == password);
+    }
 }
