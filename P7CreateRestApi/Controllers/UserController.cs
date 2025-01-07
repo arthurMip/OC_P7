@@ -1,34 +1,33 @@
 using Dot.Net.WebApi.Domain;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using P7CreateRestApi.Models;
 using P7CreateRestApi.Repositories;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 
-namespace Dot.Net.WebApi.Controllers;
+namespace P7CreateRestApi.Controllers;
 
+[Authorize(Roles = "Admin")]
 [ApiController]
 [Route("api/[controller]")]
 public class UserController : ControllerBase
 {
-    private readonly UserRepository _userRepository;
-    private readonly IConfiguration _configuration;
+    private readonly UserManager<IdentityUser> _userManager;
+    private readonly RoleManager<IdentityRole> _roleManager;
 
-    public UserController(UserRepository userRepository, IConfiguration configuration)
+    public UserController(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager)
     {
-        _userRepository = userRepository;
-        _configuration = configuration;
+        _userManager = userManager;
+        _roleManager = roleManager;
     }
 
     [HttpGet]
     [Route("{id}")]
     [ProducesResponseType(200)]
     [ProducesResponseType(404)]
-    public async Task<IActionResult> GetUser(int id)
+    public async Task<IActionResult> GetUser(string id)
     {
-        var user = await _userRepository.GetUserByIdAsync(id);
+        var user = await _userManager.FindByIdAsync(id);
+
         return user == null ? NotFound() : Ok(user);
     }
 
@@ -43,20 +42,40 @@ public class UserController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        await _userRepository.CreateUserAsync(user);
-        return Ok(user);
+        var existingUser = await _userManager.FindByNameAsync(user.Username);
+        if (existingUser is not null)
+        {
+            return BadRequest();
+        }
+
+        var newUser = new IdentityUser(user.Username);
+
+        var role = await _roleManager.FindByNameAsync(user.Role);
+        if (role is null)
+        {
+            return BadRequest();
+        }
+
+        var result = await _userManager.CreateAsync(newUser, user.Password);
+        if (!result.Succeeded)
+        {
+            return BadRequest(result.Errors);
+        }
+
+        await _userManager.AddToRoleAsync(newUser, role.Name);
+
+        return Ok();
     }
 
-    [HttpPost]
-    [Route("update/{id}")]
+    [HttpPut]
+    [Route("{id}")]
     [ProducesResponseType(200)]
     [ProducesResponseType(400)]
     [ProducesResponseType(404)]
-    public async Task<IActionResult> UpdateUser(int id, [FromBody] User user)
+    public async Task<IActionResult> UpdateUser(string id, [FromBody] User user)
     {
-        bool exists = await _userRepository.UserExistsAsync(id);
-
-        if (!exists)
+        var existingUser = await _userManager.FindByIdAsync(id);
+        if (existingUser is null)
         {
             return NotFound();
         }
@@ -66,13 +85,30 @@ public class UserController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        user.Id = id;
-        bool updated = await _userRepository.UpdateUserAsync(user);
-
-        if (!updated)
+        if (!string.IsNullOrEmpty(user.Role))
         {
-            return NotFound();
+            var role = await _roleManager.FindByNameAsync(user.Role);
+            if (role is null)
+            {
+                return BadRequest();
+            }
+
+            var existingRoles = await _userManager.GetRolesAsync(existingUser);
+            await _userManager.RemoveFromRolesAsync(existingUser, existingRoles);
+            await _userManager.AddToRoleAsync(existingUser, role.Name);
         }
+
+        if (!string.IsNullOrEmpty(user.Username))
+        {
+            existingUser.UserName = user.Username;
+        }
+
+        if (!string.IsNullOrEmpty(user.Password))
+        {
+            existingUser.PasswordHash = _userManager.PasswordHasher.HashPassword(existingUser, user.Password);
+        }
+
+        await _userManager.UpdateAsync(existingUser);
 
         return Ok(user);
     }
@@ -81,52 +117,16 @@ public class UserController : ControllerBase
     [Route("{id}")]
     [ProducesResponseType(204)]
     [ProducesResponseType(404)]
-    public async Task<IActionResult> DeleteUser(int id)
+    public async Task<IActionResult> DeleteUser(string id)
     {
-        bool deleted = await _userRepository.DeleteUserAsync(id);
-        return deleted ? NoContent() : NotFound();
-    }
-
-    [HttpPost]
-    [Route("login")]
-    [ProducesResponseType(200)]
-    [ProducesResponseType(400)]
-    [ProducesResponseType(401)]
-    public async Task<IActionResult> Login([FromBody] LoginModel model)
-    {
-        if (!ModelState.IsValid)
+        var user = await _userManager.FindByIdAsync(id);
+        if (user is null)
         {
-            return BadRequest(ModelState);
+            return NotFound();
         }
+        
+        await _userManager.DeleteAsync(user);
 
-        bool isValidUser = await _userRepository.ContainAsync(model.Username, model.Password);
-
-        if (isValidUser)
-        {
-            var jwtSettings = _configuration.GetSection("JwtSettings");
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]));
-            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var claims = new[]
-            {
-                new Claim("user", model.Username),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            };
-
-            var token = new JwtSecurityToken(
-                jwtSettings["Issuer"],
-                jwtSettings["Audience"],
-                claims,
-                expires: DateTime.Now.AddMinutes(30),
-                signingCredentials: credentials
-            );
-
-            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
-
-            return Ok(new { Token = tokenString });
-        }
-
-        return Unauthorized();
+        return NoContent();
     }
 }

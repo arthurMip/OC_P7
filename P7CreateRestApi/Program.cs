@@ -4,6 +4,8 @@ using Microsoft.IdentityModel.Tokens;
 using P7CreateRestApi.Repositories;
 using System.Text;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Identity;
+using P7CreateRestApi.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 ConfigurationManager configuration = builder.Configuration;
@@ -42,10 +44,17 @@ builder.Services.AddSwaggerGen(options =>
 
 });
 
+
 builder.Services.AddDbContext<LocalDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddScoped<UserRepository>();
+
+builder.Services
+    .AddIdentityCore<IdentityUser>()
+    .AddRoles<IdentityRole>()
+    .AddEntityFrameworkStores<LocalDbContext>();
+
+
 builder.Services.AddScoped<TradeRepository>();
 builder.Services.AddScoped<RatingRepository>();
 builder.Services.AddScoped<BidListRepository>();
@@ -75,6 +84,8 @@ builder.Services
     });
 
 var app = builder.Build();
+
+await app.InitializeDatabaseAsync();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

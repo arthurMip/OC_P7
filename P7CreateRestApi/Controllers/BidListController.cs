@@ -3,11 +3,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using P7CreateRestApi.Repositories;
 
-namespace Dot.Net.WebApi.Controllers;
+namespace P7CreateRestApi.Controllers;
 
-[Authorize]
+[Authorize(Roles = "Admin,User")]
 [ApiController]
-[Route("[controller]")]
+[Route("api/[controller]")]
 public class BidListController : ControllerBase
 {
     private readonly BidListRepository _bidListRepository;
@@ -43,8 +43,8 @@ public class BidListController : ControllerBase
         return Ok(bidList);
     }
 
-    [HttpPost]
-    [Route("update/{id}")]
+    [HttpPut]
+    [Route("{id}")]
     [ProducesResponseType(200)]
     [ProducesResponseType(400)]
     [ProducesResponseType(404)]

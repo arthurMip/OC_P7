@@ -1,9 +1,11 @@
 using Dot.Net.WebApi.Domain;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using P7CreateRestApi.Repositories;
 
-namespace Dot.Net.WebApi.Controllers;
+namespace P7CreateRestApi.Controllers;
 
+[Authorize(Roles = "Admin,User")]
 [ApiController]
 [Route("api/[controller]")]
 public class CurvePointController : ControllerBase
@@ -41,8 +43,8 @@ public class CurvePointController : ControllerBase
         return Ok(curvePoint);
     }
 
-    [HttpPost]
-    [Route("update/{id}")]
+    [HttpPut]
+    [Route("{id}")]
     [ProducesResponseType(200)]
     [ProducesResponseType(400)]
     [ProducesResponseType(404)]
