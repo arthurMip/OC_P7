@@ -2,6 +2,7 @@ using Dot.Net.WebApi.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using P7CreateRestApi.Repositories;
+using Serilog;
 
 namespace P7CreateRestApi.Controllers;
 
@@ -23,6 +24,8 @@ public class BidListController : ControllerBase
     [ProducesResponseType(404)]
     public async Task<IActionResult> GetBidList(int id)
     {
+        Log.Information("GetBidList for {Id}", id);
+
         var bidList = await _bidListRepository.GetBidListByIdAsync(id);
         return bidList == null ? NotFound() : Ok(bidList);
     }
@@ -33,6 +36,8 @@ public class BidListController : ControllerBase
     [ProducesResponseType(400)]
     public async Task<IActionResult> AddBidList([FromBody] BidList bidList)
     {
+        Log.Information("AddBidList for {BidList}", bidList);
+
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
@@ -50,6 +55,8 @@ public class BidListController : ControllerBase
     [ProducesResponseType(404)]
     public async Task<IActionResult> UpdateBidList(int id, [FromBody] BidList bidList)
     {
+        Log.Information("UpdateBidList for {Id}", id);
+
         bool exists = await _bidListRepository.BidListExistsAsync(id);
 
         if (!exists)
@@ -72,8 +79,10 @@ public class BidListController : ControllerBase
     [Route("{id}")]
     [ProducesResponseType(204)]
     [ProducesResponseType(404)]
-    public async Task<IActionResult> DeleteBid(int id)
+    public async Task<IActionResult> DeleteBidList(int id)
     {
+        Log.Information("DeleteBidList for {Id}", id);
+
         bool deleted = await _bidListRepository.DeleteBidListAsync(id);
         return deleted ? NoContent() : NotFound();
     }

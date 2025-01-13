@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using P7CreateRestApi.Models;
+using Serilog;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -28,6 +29,8 @@ public class LoginController : ControllerBase
     [ProducesResponseType(401)]
     public async Task<IActionResult> Login([FromBody] LoginModel model)
     {
+        Log.Information("Login attempt for {Username}", model.Username);
+
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
