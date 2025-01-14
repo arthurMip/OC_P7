@@ -1,7 +1,9 @@
 using Dot.Net.WebApi.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using P7CreateRestApi.Extensions;
 using P7CreateRestApi.Repositories;
+using Serilog;
 
 namespace P7CreateRestApi.Controllers;
 
@@ -23,8 +25,18 @@ public class RatingController : ControllerBase
     [ProducesResponseType(404)]
     public async Task<IActionResult> GetRating(int id)
     {
+        var userId = User.GetUserId();
         var rating = await _ratingRepository.GetRatingByIdAsync(id);
-        return rating == null ? NotFound() : Ok(rating);
+        if (rating is null)
+        {
+            Log.Warning("GetRating for {Id} by user: {User} not found", id, userId);
+            return NotFound();
+        }
+        else
+        {
+            Log.Information("GetRating for {Id} by user: {User} ok", id, userId);
+            return Ok(rating);
+        }
     }
 
     [HttpPost]
@@ -33,13 +45,15 @@ public class RatingController : ControllerBase
     [ProducesResponseType(400)]
     public async Task<IActionResult> AddRating([FromBody] Rating rating)
     {
+        var userId = User.GetUserId();
         if (!ModelState.IsValid)
         {
+            Log.Warning("AddRating by user: {User} bad request", userId);
             return BadRequest(ModelState);
         }
 
         await _ratingRepository.CreateRatingAsync(rating);
-
+        Log.Information("AddRating by user: {User} ok", userId);
         return Ok(rating);
     }
 
@@ -50,15 +64,17 @@ public class RatingController : ControllerBase
     [ProducesResponseType(404)]
     public async Task<IActionResult> UpdateRating(int id, [FromBody] Rating rating)
     {
+        var userId = User.GetUserId();
         bool exists = await _ratingRepository.RatingExistsAsync(id);
-
         if (!exists)
         {
+            Log.Warning("UpdateRating for {Id} by user: {User} not found", id, userId);
             return NotFound();
         }
 
         if (!ModelState.IsValid)
         {
+            Log.Warning("UpdateRating for {Id} by user: {User} bad request", id, userId);
             return BadRequest(ModelState);
         }
 
@@ -67,9 +83,11 @@ public class RatingController : ControllerBase
 
         if (!updated)
         {
-            return NotFound();
+            Log.Warning("UpdateRating for {Id} by user: {User} bad request", id, userId);
+            return BadRequest();
         }
 
+        Log.Information("UpdateRating for {Id} by user: {User} ok", id, userId);
         return Ok(rating);
     }
 
@@ -79,7 +97,17 @@ public class RatingController : ControllerBase
     [ProducesResponseType(404)]
     public async Task<IActionResult> DeleteRating(int id)
     {
+        var userId = User.GetUserId();
         bool deleted = await _ratingRepository.DeleteRatingAsync(id);
-        return deleted ? NoContent() : NotFound();
+        if (deleted)
+        {
+            Log.Information("DeleteRating for {Id} by user: {User} no content", id, userId);
+            return NoContent();
+        }
+        else
+        {
+            Log.Warning("DeleteRating for {Id} by user: {User} not found", id, userId);
+            return NotFound();
+        }
     }
 }

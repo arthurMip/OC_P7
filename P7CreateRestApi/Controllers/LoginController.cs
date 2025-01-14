@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using P7CreateRestApi.Extensions;
 using P7CreateRestApi.Models;
 using Serilog;
 using System.IdentityModel.Tokens.Jwt;
@@ -29,25 +30,27 @@ public class LoginController : ControllerBase
     [ProducesResponseType(401)]
     public async Task<IActionResult> Login([FromBody] LoginModel model)
     {
-        Log.Information("Login attempt for {Username}", model.Username);
-
         if (!ModelState.IsValid)
         {
+            Log.Warning("Login attempt for user: {Username} bad request", model.Username);
             return BadRequest(ModelState);
         }
 
         var user = await _userManager.FindByNameAsync(model.Username);
         if (user is null)
         {
+            Log.Warning("Login attempt for user: {Username} unauthorized not found", model.Username);
             return Unauthorized();
         }
 
         bool validPassword = await _userManager.CheckPasswordAsync(user, model.Password);
         if (!validPassword)
         {
+            Log.Warning("Login attempt for user: {user} unauthorized invalid password", user.Id);
             return Unauthorized();
         }
 
+        Log.Information("Login attempt for user: {user} ok", user.Id);
         var token = await GenerateTokenAsync(user);
         return Ok(new {token});
     }

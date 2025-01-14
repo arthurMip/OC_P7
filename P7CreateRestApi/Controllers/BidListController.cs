@@ -1,6 +1,7 @@
 using Dot.Net.WebApi.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using P7CreateRestApi.Extensions;
 using P7CreateRestApi.Repositories;
 using Serilog;
 
@@ -24,10 +25,18 @@ public class BidListController : ControllerBase
     [ProducesResponseType(404)]
     public async Task<IActionResult> GetBidList(int id)
     {
-        Log.Information("GetBidList for {Id}", id);
-
+        var userId = User.GetUserId();
         var bidList = await _bidListRepository.GetBidListByIdAsync(id);
-        return bidList == null ? NotFound() : Ok(bidList);
+        if (bidList is null)
+        {
+            Log.Warning("GetBidList for {Id} by user: {User} not found", id, userId);
+            return NotFound();
+        }
+        else
+        {
+            Log.Information("GetBidList for {Id} by user: {User} ok", id, userId);
+            return Ok(bidList);
+        }
     }
 
     [HttpPost]
@@ -36,15 +45,15 @@ public class BidListController : ControllerBase
     [ProducesResponseType(400)]
     public async Task<IActionResult> AddBidList([FromBody] BidList bidList)
     {
-        Log.Information("AddBidList for {BidList}", bidList);
-
+        var userId = User.GetUserId();
         if (!ModelState.IsValid)
         {
+            Log.Warning("AddBidList by user: {User} bad request", userId);
             return BadRequest(ModelState);
         }
 
         await _bidListRepository.CreateBidListAsync(bidList);
-
+        Log.Information("AddBidList by user: {User} ok", userId);
         return Ok(bidList);
     }
 
@@ -55,23 +64,24 @@ public class BidListController : ControllerBase
     [ProducesResponseType(404)]
     public async Task<IActionResult> UpdateBidList(int id, [FromBody] BidList bidList)
     {
-        Log.Information("UpdateBidList for {Id}", id);
-
+        var userId = User.GetUserId();
         bool exists = await _bidListRepository.BidListExistsAsync(id);
-
         if (!exists)
         {
+            Log.Warning("UpdateBidList for {Id} by user: {User} not found", id, userId);
             return NotFound();
         }
 
         if (!ModelState.IsValid)
         {
+            Log.Warning("UpdateBidList for {Id} by user: {User} bad request", id, userId);
             return BadRequest(ModelState);
         }
 
         bidList.BidListId = id;
         await _bidListRepository.UpdateBidListAsync(bidList);
 
+        Log.Information("UpdateBidList for {Id} by user: {User} ok", id, userId);
         return Ok(bidList);
     }
 
@@ -81,9 +91,17 @@ public class BidListController : ControllerBase
     [ProducesResponseType(404)]
     public async Task<IActionResult> DeleteBidList(int id)
     {
-        Log.Information("DeleteBidList for {Id}", id);
-
+        var userId = User.GetUserId();
         bool deleted = await _bidListRepository.DeleteBidListAsync(id);
-        return deleted ? NoContent() : NotFound();
+        if (deleted)
+        {
+            Log.Information("DeleteBidList for {Id} by user: {User} no content", id, userId);
+            return NoContent();
+        }
+        else
+        {
+            Log.Warning("DeleteBidList for {Id} by user: {User} not found", id, userId);
+            return NotFound();
+        }
     }
 }
