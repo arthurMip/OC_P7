@@ -20,7 +20,7 @@ public class BidListTests
     }
 
     [Fact]
-    public async Task CreateBidListAsync_ShouldAddNewBidList()
+    public async Task CreateBidList_ShouldAddNewBidList()
     {
         // Arrange
         var repository = new BidListRepository(_context);
@@ -35,9 +35,9 @@ public class BidListTests
 
         // Act
         await repository.CreateBidListAsync(bidList);
+        var createdBidList = await _context.BidLists.FindAsync(bidList.BidListId);
 
         // Assert
-        var createdBidList = await _context.BidLists.FindAsync(bidList.BidListId);
         Assert.NotNull(createdBidList);
         Assert.Equal(bidList.Account, createdBidList.Account);
         Assert.Equal(bidList.BidType, createdBidList.BidType);
@@ -45,7 +45,7 @@ public class BidListTests
     }
 
     [Fact]
-    public async Task GetBidListByIdAsync_ShouldReturnBidList()
+    public async Task GetBidListById_ShouldReturnBidList()
     {
         // Arrange
         var repository = new BidListRepository(_context);
@@ -57,9 +57,9 @@ public class BidListTests
             BidQuantity = 100
         };
 
-        await repository.CreateBidListAsync(bidList);
 
         // Act
+        await repository.CreateBidListAsync(bidList);
         var result = await repository.GetBidListByIdAsync(bidList.BidListId);
 
         // Assert
@@ -69,8 +69,8 @@ public class BidListTests
         Assert.Equal(bidList.BidQuantity, result.BidQuantity);
     }
 
-    [Fact]
-    public async Task UpdateBidListAsync_ShouldUpdateExistingBidList()
+    [Fact]  
+    public async Task UpdateBidList_ShouldUpdateExistingBidList()
     {
         // Arrange
         var repository = new BidListRepository(_context);
@@ -82,8 +82,8 @@ public class BidListTests
             BidQuantity = 100
         };
 
+        // Act
         await repository.CreateBidListAsync(bidList);
-
         var updatedBidList = new BidList
         {
             BidListId = bidList.BidListId,
@@ -92,13 +92,10 @@ public class BidListTests
             BidQuantity = 200
         };
 
-        // Act
-        var result = await repository.UpdateBidListAsync(updatedBidList);
+        await repository.UpdateBidListAsync(updatedBidList);
+        var existingBidList = await _context.BidLists.FindAsync(bidList.BidListId);
 
         // Assert
-        Assert.True(result);
-
-        var existingBidList = await _context.BidLists.FindAsync(bidList.BidListId);
         Assert.NotNull(existingBidList);
         Assert.Equal(updatedBidList.Account, existingBidList.Account);
         Assert.Equal(updatedBidList.BidType, existingBidList.BidType);
@@ -106,7 +103,7 @@ public class BidListTests
     }
 
     [Fact]
-    public async Task DeleteBidListAsync_ShouldDeleteExistingBidList()
+    public async Task DeleteBidList_ShouldDeleteExistingBidList()
     {
         // Arrange
         var repository = new BidListRepository(_context);
@@ -121,12 +118,10 @@ public class BidListTests
         await repository.CreateBidListAsync(bidList);
 
         // Act
-        var result = await repository.DeleteBidListAsync(bidList.BidListId);
+        await repository.DeleteBidListAsync(bidList.BidListId);
+        var deletedBidList = await _context.BidLists.FindAsync(bidList.BidListId);
 
         // Assert
-        Assert.True(result);
-
-        var deletedBidList = await _context.BidLists.FindAsync(bidList.BidListId);
         Assert.Null(deletedBidList);
     }
 }
