@@ -1,8 +1,10 @@
 ﻿using Dot.Net.WebApi.Data;
 using Dot.Net.WebApi.Domain;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using P7CreateRestApi.Repositories;
-
+using Moq;
+using P7CreateRestApi.Controllers;
+using P7CreateRestApi.Iterfaces;
 
 namespace P7CreateRestApi.Tests;
 
@@ -20,108 +22,151 @@ public class BidListTests
     }
 
     [Fact]
-    public async Task CreateBidList_ShouldAddNewBidList()
+    public async Task GetItem_ShouldReturnItem()
     {
         // Arrange
-        var repository = new BidListRepository(_context);
-
-        var bidList = new BidList
+        var Item = new BidList
         {
             Account = "Test Account",
             BidType = "Test Type",
             BidQuantity = 100
         };
 
+        Mock<IGenericRepository<BidList>> mock = new();
+        mock.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync(Item);
 
         // Act
-        await repository.CreateBidListAsync(bidList);
-        var createdBidList = await _context.BidLists.FindAsync(bidList.BidListId);
-
-        // Assert
-        Assert.NotNull(createdBidList);
-        Assert.Equal(bidList.Account, createdBidList.Account);
-        Assert.Equal(bidList.BidType, createdBidList.BidType);
-        Assert.Equal(bidList.BidQuantity, createdBidList.BidQuantity);
-    }
-
-    [Fact]
-    public async Task GetBidListById_ShouldReturnBidList()
-    {
-        // Arrange
-        var repository = new BidListRepository(_context);
-
-        var bidList = new BidList
-        {
-            Account = "Test Account",
-            BidType = "Test Type",
-            BidQuantity = 100
-        };
-
-
-        // Act
-        await repository.CreateBidListAsync(bidList);
-        var result = await repository.GetBidListByIdAsync(bidList.BidListId);
+        var controller = new BidListController(mock.Object);
+        var result = await controller.GetBidList(1);
+        var value = (result as OkObjectResult)?.Value as BidList;
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(bidList.Account, result.Account);
-        Assert.Equal(bidList.BidType, result.BidType);
-        Assert.Equal(bidList.BidQuantity, result.BidQuantity);
-    }
-
-    [Fact]  
-    public async Task UpdateBidList_ShouldUpdateExistingBidList()
-    {
-        // Arrange
-        var repository = new BidListRepository(_context);
-
-        var bidList = new BidList
-        {
-            Account = "Test Account",
-            BidType = "Test Type",
-            BidQuantity = 100
-        };
-
-        // Act
-        await repository.CreateBidListAsync(bidList);
-        var updatedBidList = new BidList
-        {
-            BidListId = bidList.BidListId,
-            Account = "Updated Account",
-            BidType = "Updated Type",
-            BidQuantity = 200
-        };
-
-        await repository.UpdateBidListAsync(updatedBidList);
-        var existingBidList = await _context.BidLists.FindAsync(bidList.BidListId);
-
-        // Assert
-        Assert.NotNull(existingBidList);
-        Assert.Equal(updatedBidList.Account, existingBidList.Account);
-        Assert.Equal(updatedBidList.BidType, existingBidList.BidType);
-        Assert.Equal(updatedBidList.BidQuantity, existingBidList.BidQuantity);
+        Assert.IsType<OkObjectResult>(result);
+        Assert.Equal("Test Account", value?.Account);
     }
 
     [Fact]
-    public async Task DeleteBidList_ShouldDeleteExistingBidList()
+    public async Task GetItem_ShouldReturnNotFound()
     {
         // Arrange
-        var repository = new BidListRepository(_context);
+        Mock<IGenericRepository<BidList>> mock = new();
+        mock.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync((BidList?)null);
 
-        var bidList = new BidList
+        // Act
+        var controller = new BidListController(mock.Object);
+        var result = await controller.GetBidList(1);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.IsType<NotFoundResult>(result);
+    }
+
+
+    [Fact]
+    public async Task AddItem_ShouldReturnItem()
+    {
+        // Arrange
+        var Item = new BidList
         {
             Account = "Test Account",
             BidType = "Test Type",
             BidQuantity = 100
         };
 
-        await repository.CreateBidListAsync(bidList);
+        Mock<IGenericRepository<BidList>> mock = new();
+        mock.Setup(repo => repo.CreateAsync(Item)).ReturnsAsync(true);
 
         // Act
-        await repository.DeleteBidListAsync(bidList.BidListId);
-        var deletedBidList = await _context.BidLists.FindAsync(bidList.BidListId);
+        var controller = new BidListController(mock.Object);
+        var result = await controller.AddBidList(Item);
+        var value = (result as OkObjectResult)?.Value as BidList;
 
         // Assert
-        Assert.Null(deletedBidList);
+        Assert.NotNull(result);
+        Assert.IsType<OkObjectResult>(result);
+        Assert.Equal("Test Account", value?.Account);
+    }
+
+    [Fact]
+    public async Task UpdateItem_ShouldReturnItem()
+    {
+        // Arrange
+        var Item = new BidList
+        {
+            Account = "Test Account",
+            BidType = "Test Type",
+            BidQuantity = 100
+        };
+
+        Mock<IGenericRepository<BidList>> mock = new();
+        mock.Setup(repo => repo.UpdateAsync(Item)).ReturnsAsync(true);
+        mock.Setup(repo => repo.ExistsAsync(1)).ReturnsAsync(true);
+
+        // Act
+        var controller = new BidListController(mock.Object);
+        var result = await controller.UpdateBidList(1, Item);
+        var value = (result as OkObjectResult)?.Value as BidList;
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.IsType<OkObjectResult>(result);
+        Assert.Equal("Test Account", value?.Account);
+    }
+
+    [Fact]
+    public async Task UpdateItem_ShouldReturnNotFound()
+    {
+        // Arrange
+        var Item = new BidList
+        {
+            Account = "Test Account",
+            BidType = "Test Type",
+            BidQuantity = 100
+        };
+
+        Mock<IGenericRepository<BidList>> mock = new();
+        mock.Setup(repo => repo.UpdateAsync(Item)).ReturnsAsync(true);
+        mock.Setup(repo => repo.ExistsAsync(1)).ReturnsAsync(false);
+
+        // Act
+        var controller = new BidListController(mock.Object);
+        var result = await controller.UpdateBidList(1, Item);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.IsType<NotFoundResult>(result);
+    }
+
+    [Fact]
+    public async Task DeleteItem_ShouldReturnNoContent()
+    {
+        // Arrange
+        Mock<IGenericRepository<BidList>> mock = new();
+        mock.Setup(repo => repo.DeleteAsync(1)).ReturnsAsync(true);
+
+        // Act
+        var controller = new BidListController(mock.Object);
+        var result = await controller.DeleteBidList(1);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.IsType<NoContentResult>(result);
+    }
+
+    [Fact]
+    public async Task DeleteItem_ShouldReturnNotFound()
+    {
+        // Arrange
+        Mock<IGenericRepository<BidList>> mock = new();
+        mock.Setup(repo => repo.DeleteAsync(1)).ReturnsAsync(false);
+
+        // Act
+        var controller = new BidListController(mock.Object);
+        var result = await controller.DeleteBidList(1);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.IsType<NotFoundResult>(result);
     }
 }

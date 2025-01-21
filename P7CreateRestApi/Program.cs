@@ -7,6 +7,8 @@ using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Identity;
 using P7CreateRestApi.Data;
 using Serilog;
+using P7CreateRestApi.Iterfaces;
+using Dot.Net.WebApi.Domain;
 
 var builder = WebApplication.CreateBuilder(args);
 ConfigurationManager configuration = builder.Configuration;
@@ -61,11 +63,11 @@ builder.Services
     .AddEntityFrameworkStores<LocalDbContext>();
 
 
-builder.Services.AddScoped<TradeRepository>();
-builder.Services.AddScoped<RatingRepository>();
-builder.Services.AddScoped<BidListRepository>();
-builder.Services.AddScoped<RuleNameRepository>();
-builder.Services.AddScoped<CurvePointRepository>();
+builder.Services.AddScoped<IGenericRepository<Trade>, TradeRepository>();
+builder.Services.AddScoped<IGenericRepository<Rating>, RatingRepository>();
+builder.Services.AddScoped<IGenericRepository<BidList>, BidListRepository>();
+builder.Services.AddScoped<IGenericRepository<RuleName>, RuleNameRepository>();
+builder.Services.AddScoped<IGenericRepository<CurvePoint>, CurvePointRepository>();
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 

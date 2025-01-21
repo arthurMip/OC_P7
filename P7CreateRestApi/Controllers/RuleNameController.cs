@@ -2,6 +2,7 @@ using Dot.Net.WebApi.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using P7CreateRestApi.Extensions;
+using P7CreateRestApi.Iterfaces;
 using P7CreateRestApi.Repositories;
 using Serilog;
 
@@ -12,9 +13,9 @@ namespace P7CreateRestApi.Controllers;
 [Route("api/[controller]")]
 public class RuleNameController : ControllerBase
 {
-    private readonly RuleNameRepository _ruleNameRepository;
+    private readonly IGenericRepository<RuleName> _ruleNameRepository;
 
-    public RuleNameController(RuleNameRepository ruleNameRepository)
+    public RuleNameController(IGenericRepository<RuleName> ruleNameRepository)
     {
         _ruleNameRepository = ruleNameRepository;
     }
@@ -26,7 +27,7 @@ public class RuleNameController : ControllerBase
     public async Task<IActionResult> GetRuleName(int id)
     {
         var userId = User.GetUserId();
-        var ruleName = await _ruleNameRepository.GetRuleNameByIdAsync(id);
+        var ruleName = await _ruleNameRepository.GetByIdAsync(id);
         if (ruleName is null)
         {
             Log.Warning("GetRuleName for {Id} by user: {User} not found", id, userId);
@@ -52,7 +53,7 @@ public class RuleNameController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        await _ruleNameRepository.CreateRuleNameAsync(ruleName);
+        await _ruleNameRepository.CreateAsync(ruleName);
         Log.Information("AddRuleName by user: {User} ok", userId);
         return Ok(ruleName);
     }
@@ -65,7 +66,7 @@ public class RuleNameController : ControllerBase
     public async Task<IActionResult> UpdateRuleName(int id, [FromBody] RuleName ruleName)
     {
         var userId = User.GetUserId();
-        bool exists = await _ruleNameRepository.RuleNameExistsAsync(id);
+        bool exists = await _ruleNameRepository.ExistsAsync(id);
         if (!exists)
         {
             Log.Warning("UpdateRuleName for {Id} by user: {User} not found", id, userId);
@@ -79,7 +80,7 @@ public class RuleNameController : ControllerBase
         }
 
         ruleName.Id = id;
-        bool updated = await _ruleNameRepository.UpdateRuleNameAsync(ruleName);
+        bool updated = await _ruleNameRepository.UpdateAsync(ruleName);
 
         if (!updated)
         {
@@ -98,7 +99,7 @@ public class RuleNameController : ControllerBase
     public async Task<IActionResult> DeleteRuleName(int id)
     {
         var userId = User.GetUserId();
-        bool deleted = await _ruleNameRepository.DeleteRuleNameAsync(id);
+        bool deleted = await _ruleNameRepository.DeleteAsync(id);
         if (deleted)
         {
             Log.Information("DeleteRuleName for {Id} by user: {User} not content", id, userId);

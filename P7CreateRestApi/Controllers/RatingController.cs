@@ -2,6 +2,7 @@ using Dot.Net.WebApi.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using P7CreateRestApi.Extensions;
+using P7CreateRestApi.Iterfaces;
 using P7CreateRestApi.Repositories;
 using Serilog;
 
@@ -12,9 +13,9 @@ namespace P7CreateRestApi.Controllers;
 [Route("api/[controller]")]
 public class RatingController : ControllerBase
 {
-    private readonly RatingRepository _ratingRepository;
+    private readonly IGenericRepository<Rating> _ratingRepository;
 
-    public RatingController(RatingRepository ratingRepository)
+    public RatingController(IGenericRepository<Rating> ratingRepository)
     {
         _ratingRepository = ratingRepository;
     }
@@ -26,7 +27,7 @@ public class RatingController : ControllerBase
     public async Task<IActionResult> GetRating(int id)
     {
         var userId = User.GetUserId();
-        var rating = await _ratingRepository.GetRatingByIdAsync(id);
+        var rating = await _ratingRepository.GetByIdAsync(id);
         if (rating is null)
         {
             Log.Warning("GetRating for {Id} by user: {User} not found", id, userId);
@@ -52,7 +53,7 @@ public class RatingController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        await _ratingRepository.CreateRatingAsync(rating);
+        await _ratingRepository.CreateAsync(rating);
         Log.Information("AddRating by user: {User} ok", userId);
         return Ok(rating);
     }
@@ -65,7 +66,7 @@ public class RatingController : ControllerBase
     public async Task<IActionResult> UpdateRating(int id, [FromBody] Rating rating)
     {
         var userId = User.GetUserId();
-        bool exists = await _ratingRepository.RatingExistsAsync(id);
+        bool exists = await _ratingRepository.ExistsAsync(id);
         if (!exists)
         {
             Log.Warning("UpdateRating for {Id} by user: {User} not found", id, userId);
@@ -79,7 +80,7 @@ public class RatingController : ControllerBase
         }
 
         rating.Id = id;
-        bool updated = await _ratingRepository.UpdateRatingAsync(rating);
+        bool updated = await _ratingRepository.UpdateAsync(rating);
 
         if (!updated)
         {
@@ -98,7 +99,7 @@ public class RatingController : ControllerBase
     public async Task<IActionResult> DeleteRating(int id)
     {
         var userId = User.GetUserId();
-        bool deleted = await _ratingRepository.DeleteRatingAsync(id);
+        bool deleted = await _ratingRepository.DeleteAsync(id);
         if (deleted)
         {
             Log.Information("DeleteRating for {Id} by user: {User} no content", id, userId);

@@ -1,10 +1,11 @@
 ﻿using Dot.Net.WebApi.Data;
 using Dot.Net.WebApi.Domain;
 using Microsoft.EntityFrameworkCore;
+using P7CreateRestApi.Iterfaces;
 
 namespace P7CreateRestApi.Repositories;
 
-public class BidListRepository
+public class BidListRepository : IGenericRepository<BidList>
 {
     private readonly LocalDbContext _context;
 
@@ -13,31 +14,31 @@ public class BidListRepository
         _context = context;
     }
 
-    public async Task<BidList?> GetBidListByIdAsync(int id)
+    public async Task<BidList?> GetByIdAsync(int id)
     {
         return await _context.BidLists.FindAsync(id);
     }
 
-    public async Task CreateBidListAsync(BidList bidList)
+    public async Task<bool> CreateAsync(BidList model)
     {
-        _context.BidLists.Add(bidList);
-        await _context.SaveChangesAsync();
+        _context.BidLists.Add(model);
+        return await _context.SaveChangesAsync() > 0;
     }
 
-    public async Task<bool> UpdateBidListAsync(BidList bidList)
+    public async Task<bool> UpdateAsync(BidList model)
     {
-        var existingBidList = await _context.BidLists.FindAsync(bidList.BidListId);
+        var existingBidList = await _context.BidLists.FindAsync(model.BidListId);
 
         if (existingBidList == null)
         {
             return false;
         }
 
-        _context.Entry(existingBidList).CurrentValues.SetValues(bidList);
+        _context.Entry(existingBidList).CurrentValues.SetValues(model);
         return await _context.SaveChangesAsync() > 0;
     }
 
-    public async Task<bool> DeleteBidListAsync(int id)
+    public async Task<bool> DeleteAsync(int id)
     {
         var bidListToDelete = await _context.BidLists.FindAsync(id);
 
@@ -50,7 +51,7 @@ public class BidListRepository
         return await _context.SaveChangesAsync() > 0;
     }
 
-    public Task<bool> BidListExistsAsync(int id)
+    public Task<bool> ExistsAsync(int id)
     {
         return _context.BidLists.AnyAsync(b => b.BidListId == id);
     }
