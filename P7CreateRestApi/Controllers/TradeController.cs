@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using P7CreateRestApi.Extensions;
 using P7CreateRestApi.Iterfaces;
-using P7CreateRestApi.Repositories;
 using Serilog;
 
 namespace P7CreateRestApi.Controllers;

@@ -2,6 +2,7 @@ using Dot.Net.WebApi.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using P7CreateRestApi.Extensions;
+using P7CreateRestApi.Iterfaces;
 using P7CreateRestApi.Repositories;
 using Serilog;
 
@@ -12,9 +13,9 @@ namespace P7CreateRestApi.Controllers;
 [Route("api/[controller]")]
 public class CurvePointController : ControllerBase
 {
-    private readonly CurvePointRepository _curvePointRepository;
+    private readonly IGenericRepository<CurvePoint> _curvePointRepository;
 
-    public CurvePointController(CurvePointRepository curvePointRepository)
+    public CurvePointController(IGenericRepository<CurvePoint> curvePointRepository)
     {
         _curvePointRepository = curvePointRepository;
     }
