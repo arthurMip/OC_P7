@@ -1,10 +1,11 @@
 ﻿using Dot.Net.WebApi.Data;
 using Dot.Net.WebApi.Domain;
 using Microsoft.EntityFrameworkCore;
+using P7CreateRestApi.Iterfaces;
 
 namespace P7CreateRestApi.Repositories;
 
-public class TradeRepository
+public class TradeRepository : IGenericRepository<Trade>
 {
     private readonly LocalDbContext _context;
 
@@ -13,33 +14,33 @@ public class TradeRepository
         _context = context;
     }
 
-    public async Task<Trade?> GetTradeByIdAsync(int tradeId)
+    public async Task<Trade?> GetByIdAsync(int id)
     {
-        return await _context.Trades.FindAsync(tradeId);
+        return await _context.Trades.FindAsync(id);
     }
 
-    public async Task CreateTradeAsync(Trade trade)
+    public async Task<bool> CreateAsync(Trade model)
     {
-        _context.Trades.Add(trade);
-        await _context.SaveChangesAsync();
+        _context.Trades.Add(model);
+        return await _context.SaveChangesAsync() > 0;
     }
 
-    public async Task<bool> UpdateTradeAsync(Trade trade)
+    public async Task<bool> UpdateAsync(Trade model)
     {
-        var existingTrade = await _context.Trades.FindAsync(trade.TradeId);
+        var existingTrade = await _context.Trades.FindAsync(model.TradeId);
 
         if (existingTrade == null)
         {
             return false;
         }
 
-        _context.Entry(existingTrade).CurrentValues.SetValues(trade);
+        _context.Entry(existingTrade).CurrentValues.SetValues(model);
         return await _context.SaveChangesAsync() > 0;
     }
 
-    public async Task<bool> DeleteTradeAsync(int tradeId)
+    public async Task<bool> DeleteAsync(int id)
     {
-        var tradeToDelete = await _context.Trades.FindAsync(tradeId);
+        var tradeToDelete = await _context.Trades.FindAsync(id);
 
         if (tradeToDelete == null)
         {
@@ -50,8 +51,8 @@ public class TradeRepository
         return await _context.SaveChangesAsync() > 0;
     }
 
-    public Task<bool> TradeExistsAsync(int tradeId)
+    public Task<bool> ExistsAsync(int id)
     {
-        return _context.Trades.AnyAsync(t => t.TradeId == tradeId);
+        return _context.Trades.AnyAsync(t => t.TradeId == id);
     }
 }

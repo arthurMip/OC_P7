@@ -1,10 +1,11 @@
 ﻿using Dot.Net.WebApi.Data;
 using Dot.Net.WebApi.Domain;
 using Microsoft.EntityFrameworkCore;
+using P7CreateRestApi.Iterfaces;
 
 namespace P7CreateRestApi.Repositories;
 
-public class RatingRepository
+public class RatingRepository : IGenericRepository<Rating>
 {
     private readonly LocalDbContext _context;
 
@@ -13,31 +14,31 @@ public class RatingRepository
         _context = context;
     }
 
-    public async Task<Rating?> GetRatingByIdAsync(int id)
+    public async Task<Rating?> GetByIdAsync(int id)
     {
         return await _context.Ratings.FindAsync(id);
     }
 
-    public async Task CreateRatingAsync(Rating rating)
+    public async Task<bool> CreateAsync(Rating model)
     {
-        _context.Ratings.Add(rating);
-        await _context.SaveChangesAsync();
+        _context.Ratings.Add(model);
+        return await _context.SaveChangesAsync() > 0;
     }
 
-    public async Task<bool> UpdateRatingAsync(Rating rating)
+    public async Task<bool> UpdateAsync(Rating model)
     {
-        var existingRating = await _context.Ratings.FindAsync(rating.Id);
+        var existingRating = await _context.Ratings.FindAsync(model.Id);
 
         if (existingRating == null)
         {
             return false;
         }
 
-        _context.Entry(existingRating).CurrentValues.SetValues(rating);
+        _context.Entry(existingRating).CurrentValues.SetValues(model);
         return await _context.SaveChangesAsync() > 0;
     }
 
-    public async Task<bool> DeleteRatingAsync(int id)
+    public async Task<bool> DeleteAsync(int id)
     {
         var ratingToDelete = await _context.Ratings.FindAsync(id);
 
@@ -50,7 +51,7 @@ public class RatingRepository
         return await _context.SaveChangesAsync() > 0;
     }
 
-    public Task<bool> RatingExistsAsync(int id)
+    public Task<bool> ExistsAsync(int id)
     {
         return _context.Ratings.AnyAsync(r => r.Id == id);
     }

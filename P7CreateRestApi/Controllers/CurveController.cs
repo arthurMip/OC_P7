@@ -2,6 +2,7 @@ using Dot.Net.WebApi.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using P7CreateRestApi.Extensions;
+using P7CreateRestApi.Iterfaces;
 using P7CreateRestApi.Repositories;
 using Serilog;
 
@@ -12,9 +13,9 @@ namespace P7CreateRestApi.Controllers;
 [Route("api/[controller]")]
 public class CurvePointController : ControllerBase
 {
-    private readonly CurvePointRepository _curvePointRepository;
+    private readonly IGenericRepository<CurvePoint> _curvePointRepository;
 
-    public CurvePointController(CurvePointRepository curvePointRepository)
+    public CurvePointController(IGenericRepository<CurvePoint> curvePointRepository)
     {
         _curvePointRepository = curvePointRepository;
     }
@@ -26,7 +27,7 @@ public class CurvePointController : ControllerBase
     public async Task<IActionResult> GetCurvePoint(int id)
     {
         var userId = User.GetUserId();
-        var curvePoint = await _curvePointRepository.GetCurvePointByIdAsync(id);
+        var curvePoint = await _curvePointRepository.GetByIdAsync(id);
         if (curvePoint is null)
         {
             Log.Warning("GetBidList for {Id} by user: {User} not found", id, userId);
@@ -52,7 +53,7 @@ public class CurvePointController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        await _curvePointRepository.CreateCurvePointAsync(curvePoint);
+        await _curvePointRepository.CreateAsync(curvePoint);
         Log.Information("AddCurvePoint by user: {User} ok", userId);
         return Ok(curvePoint);
     }
@@ -65,7 +66,7 @@ public class CurvePointController : ControllerBase
     public async Task<IActionResult> UpdateCurvePoint(int id, [FromBody] CurvePoint curvePoint)
     {
         var userId = User.GetUserId();
-        bool exists = await _curvePointRepository.CurvePointExistsAsync(id);
+        bool exists = await _curvePointRepository.ExistsAsync(id);
         if (!exists)
         {
             Log.Warning("UpdateBidList for {Id} by user: {User} not found", id, userId);
@@ -79,7 +80,7 @@ public class CurvePointController : ControllerBase
         }
 
         curvePoint.Id = id;
-        bool updated = await _curvePointRepository.UpdateCurvePointAsync(curvePoint);
+        bool updated = await _curvePointRepository.UpdateAsync(curvePoint);
         if (!updated)
         {
             Log.Warning("UpdateBidList for {Id} by user: {User} bad request", id, userId);
@@ -97,7 +98,7 @@ public class CurvePointController : ControllerBase
     public async Task<IActionResult> DeleteCurvePoint(int id)
     {
         var userId = User.GetUserId();
-        bool deleted = await _curvePointRepository.DeleteCurvePointAsync(id);
+        bool deleted = await _curvePointRepository.DeleteAsync(id);
         if (deleted)
         {
             Log.Information("UpdateBidList for {Id} by user: {User} no content", id, userId);

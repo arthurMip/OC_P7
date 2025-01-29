@@ -2,7 +2,7 @@ using Dot.Net.WebApi.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using P7CreateRestApi.Extensions;
-using P7CreateRestApi.Repositories;
+using P7CreateRestApi.Iterfaces;
 using Serilog;
 
 namespace P7CreateRestApi.Controllers;
@@ -12,9 +12,9 @@ namespace P7CreateRestApi.Controllers;
 [Route("api/[controller]")]
 public class TradeController : ControllerBase
 {
-    private readonly TradeRepository _tradeRepository;
+    private readonly IGenericRepository<Trade> _tradeRepository;
 
-    public TradeController(TradeRepository tradeRepository)
+    public TradeController(IGenericRepository<Trade> tradeRepository)
     {
         _tradeRepository = tradeRepository;
     }
@@ -26,7 +26,7 @@ public class TradeController : ControllerBase
     public async Task<IActionResult> GetTrade(int id)
     {
         var userId = User.GetUserId();
-        var trade = await _tradeRepository.GetTradeByIdAsync(id);
+        var trade = await _tradeRepository.GetByIdAsync(id);
         if (trade is null)
         {
             Log.Warning("GetTrade for {Id} by user: {User} not found", id, userId);
@@ -52,7 +52,7 @@ public class TradeController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        await _tradeRepository.CreateTradeAsync(trade);
+        await _tradeRepository.CreateAsync(trade);
         Log.Information("AddTrade by user: {User} ok", userId);
         return Ok(trade);
     }
@@ -65,7 +65,7 @@ public class TradeController : ControllerBase
     public async Task<IActionResult> UpdateTrade(int id, [FromBody] Trade trade)
     {
         var userId = User.GetUserId();
-        bool exists = await _tradeRepository.TradeExistsAsync(id);
+        bool exists = await _tradeRepository.ExistsAsync(id);
         if (!exists)
         {
             Log.Warning("UpdateTrade for {Id} by user: {User} not found", id, userId);
@@ -79,7 +79,7 @@ public class TradeController : ControllerBase
         }
 
         trade.TradeId = id;
-        bool updated = await _tradeRepository.UpdateTradeAsync(trade);
+        bool updated = await _tradeRepository.UpdateAsync(trade);
         if (!updated)
         {
             Log.Warning("UpdateTrade for {Id} by user: {User} bad request", id, userId);
@@ -97,7 +97,7 @@ public class TradeController : ControllerBase
     public async Task<IActionResult> DeleteTrade(int id)
     {
         var userId = User.GetUserId();
-        bool deleted = await _tradeRepository.DeleteTradeAsync(id);
+        bool deleted = await _tradeRepository.DeleteAsync(id);
         if (deleted)
         {
             Log.Information("DeleteTrade for {Id} by user: {User} no content", id, userId);
